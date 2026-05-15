@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: taskmanager-db
+    environment:
+      POSTGRES_DB: taskmanager        # nume datebase
+      POSTGRES_USER: admin            # user
+      POSTGRES_PASSWORD: admin123     # parola
+    ports:
+      - "5432:5432"                   # port local:port container
+    volumes:
+      - postgres_data:/var/lib/postgresql/data  # pentru a persista datele intre reset-uri
+
+volumes:
+  postgres_data:
