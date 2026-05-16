@@ -9,12 +9,14 @@ import com.company.taskmanager.repository.ProjectRepository;
 import com.company.taskmanager.repository.TaskRepository;
 import com.company.taskmanager.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j; // <-- Importul pentru log-uri
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j // <-- Adnotarea pentru Lombok
 public class TaskService {
 
     private final TaskRepository taskRepository;
@@ -61,7 +63,12 @@ public class TaskService {
                 .creator(creator)
                 .build();
 
-        return taskRepository.save(task);
+        Task savedTask = taskRepository.save(task);
+
+        log.info("TASK CREAT: Userul '{}' a creat task-ul '{}' (ID: {}) in proiectul cu ID-ul {}",
+                creatorUsername, savedTask.getTitle(), savedTask.getId(), project.getId());
+
+        return savedTask;
     }
 
     // Arata task-uri per proiect
@@ -75,7 +82,12 @@ public class TaskService {
                 .orElseThrow(() -> new RuntimeException("Eroare: Task-ul nu exista!"));
 
         task.setStatus(newStatus);
-        return taskRepository.save(task);
+
+        Task updatedTask = taskRepository.save(task);
+
+        log.info("STATUS TASK UPDATE: Task-ul cu ID-ul {} a fost mutat in statusul {}", taskId, newStatus);
+
+        return updatedTask;
     }
 
     // Asign task catre un utilizator
@@ -92,6 +104,11 @@ public class TaskService {
         }
 
         task.setAssignee(assignee);
-        return taskRepository.save(task);
+
+        Task assignedTask = taskRepository.save(task);
+
+        log.info("TASK ASIGNAT: Task-ul cu ID-ul {} a fost asignat catre utilizatorul '{}'", taskId, assigneeUsername);
+
+        return assignedTask;
     }
 }
