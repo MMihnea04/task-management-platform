@@ -18,7 +18,15 @@ public class ProjectService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
 
+    // verifica daca user-ul curent e owner al proiectului
+    public boolean isProjectOwner(Long projectId, String username) {
+        return projectRepository.findById(projectId)
+                .map(project -> project.getOwner().getUsername().equals(username))
+                .orElse(false);
+    }
+
     // Creare proiect nou
+    @Transactional
     public Project createProject(ProjectRequest request, String ownerUsername) {
         // cautam user-ul care va deveni ownder in DB si afisam error msg daca nu exista
         User owner = userRepository.findByUsername(ownerUsername)
@@ -28,8 +36,15 @@ public class ProjectService {
         Project project = Project.builder()
                 .name(request.getName())
                 .description(request.getDescription())
+                .status("ACTIVE")
                 .owner(owner) // setam relatia ManyToOne catre owner
                 .build();
+
+        // Ne asiguram ca lista de membri este initializata și adaugam ownerul
+        if (project.getMembers() == null) {
+            project.setMembers(new java.util.HashSet<>());
+        }
+        project.getMembers().add(owner);
 
         // salvam in PostgreSQL si returnam proiectul salvat
         return projectRepository.save(project);
