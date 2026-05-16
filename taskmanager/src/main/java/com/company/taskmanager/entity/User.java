@@ -1,5 +1,6 @@
 package com.company.taskmanager.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,20 +15,21 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-// genereaza automat getteri, setteri, toString and so on
+// Genereaza automat getteri, setteri, toString and so on
 @Data
-// putem crea obiecte de format User.builder().email("x").build()
+// Putem crea obiecte de format User.builder().email("x").build()
 @Builder
-// constuctor fara parametri pt Hibernate cand creaza obiecte din DB
+// Constuctor fara parametri pt Hibernate cand creaza obiecte din DB
 @NoArgsConstructor
-// constructor cu toti parametrii,necesar pt adnotarea Builder
+// Constructor cu toti parametrii,necesar pt adnotarea Builder
 @AllArgsConstructor
-// comunica lui Hibernate ca aceasta clasa e o tabela in DB
+// Comunica lui Hibernate ca aceasta clasa e o tabela in DB
 @Entity
-// specificam numele tabelei din DB (cea creata de Flyway in V1)
+// Specificam numele tabelei din DB (cea creata de Flyway in V1)
 @Table(name = "users")
-
-// interfata UserDetails prin care Spring Security stie cum sa lucreze cu user-ul nostru
+// Adnotarea de mai jos rezolva eroarea 500 si securizeaza datele sensibile
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "password", "authorities"})
+// Interfata UserDetails prin care Spring Security stie cum sa lucreze cu user-ul nostru
 public class User implements UserDetails {
     // Id e primary key al tabelei
     @Id
