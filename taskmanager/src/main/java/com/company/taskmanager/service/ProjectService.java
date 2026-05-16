@@ -6,6 +6,7 @@ import com.company.taskmanager.entity.User;
 import com.company.taskmanager.repository.ProjectRepository;
 import com.company.taskmanager.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j; // <-- Importul pt loguri
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,6 +14,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j // <-- Adnotarea magica de la Lombok
 public class ProjectService {
 
     private final ProjectRepository projectRepository;
@@ -46,8 +48,13 @@ public class ProjectService {
         }
         project.getMembers().add(owner);
 
-        // salvam in PostgreSQL si returnam proiectul salvat
-        return projectRepository.save(project);
+        // salvam in PostgreSQL, logam actiunea si returnam proiectul salvat
+        Project savedProject = projectRepository.save(project);
+
+        log.info("PROIECT CREAT: Userul '{}' a creat proiectul '{}' (ID: {})",
+                ownerUsername, savedProject.getName(), savedProject.getId());
+
+        return savedProject;
     }
 
     // Listare toate proiectele active (pt Admin)
@@ -82,8 +89,13 @@ public class ProjectService {
         // adaugam membrul in colectia Set a proiectului
         project.getMembers().add(member);
 
-        // returnam proiectul actualizat
-        return projectRepository.save(project);
+        // logam si returnam proiectul actualizat
+        Project updatedProject = projectRepository.save(project);
+
+        log.info("MEMBRU ADAUGAT: Userul '{}' a fost adaugat in proiectul cu ID-ul {}",
+                memberUsername, projectId);
+
+        return updatedProject;
     }
 
     // Modificare informatii proiect
@@ -99,7 +111,11 @@ public class ProjectService {
         project.setName(request.getName());
         project.setDescription(request.getDescription());
 
-        return projectRepository.save(project);
+        Project updatedProject = projectRepository.save(project);
+
+        log.info("PROIECT MODIFICAT: Detaliile proiectului cu ID-ul {} au fost actualizate", projectId);
+
+        return updatedProject;
     }
 
     // Stergere proiect, SOFT DELETE
@@ -112,5 +128,8 @@ public class ProjectService {
 
         // salvam starea modificata in DB
         projectRepository.save(project);
+
+        // Folosim WARN pt ca e o actiune distructiva
+        log.warn("PROIECT STERS: Proiectul cu ID-ul {} a fost sters logic (soft delete)!", projectId);
     }
 }

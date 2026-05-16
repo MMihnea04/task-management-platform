@@ -1,5 +1,6 @@
 package com.company.taskmanager.service;
 
+import lombok.extern.slf4j.Slf4j;
 import com.company.taskmanager.dto.AuthResponse;
 import com.company.taskmanager.dto.LoginRequest;
 import com.company.taskmanager.dto.RegisterRequest;
@@ -18,6 +19,7 @@ import java.util.Collections;
 @Service
 // RequiredArgsConstructor genereaza constructorul pt campurile final (dependency injection)
 @RequiredArgsConstructor
+@Slf4j
 public class AuthService {
 
     private final UserRepository userRepository;
@@ -47,6 +49,9 @@ public class AuthService {
         // salvam user in PostgreSQL
         userRepository.save(user);
 
+        log.info("UTILIZATOR NOU: S-a inregistrat cu succes userul cu email-ul {}"
+                , request.getEmail());
+
         // generam un token JWT pt userul nou creat ca sa se poata loga automat
         String jwtToken = jwtUtil.generateToken(user);
 
@@ -57,7 +62,7 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
-        // authenticationManager.authenticate trimite credentialele catre DaoAuthenticationProvider
+        // authenticate trimite credentialele catre DaoAuthenticationProvider
         // daca parola sau username-ul sunt gresite, da o exceptie de securitate
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
@@ -70,6 +75,8 @@ public class AuthService {
         // cautam userul in baza de date pentru a-i citi rolurile si datele complete
         User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new RuntimeException("Userul nu a fost gasit dupa autentificare"));
+
+        log.info("LOGIN SUCCESS: Userul {} s-a autentificat in sistem", request.getUsername());
 
         // generam token-ul JWT securizat cu secret key
         String jwtToken = jwtUtil.generateToken(user);
