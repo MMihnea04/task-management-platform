@@ -1,0 +1,22 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/taskmanager
+    username: admin
+    password: admin123
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate    # Flyway gestioneaza schema, Hibernate doar valideaza
+    show-sql: true          # arata queri SQL in consola pt debug
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration  # locatie scripturi de migratie
+
+server:
+  port: 8080
+
+jwt:
+  secret: "4f646b61524d6d4a576b5a41536b52474a566b534d444a6b4e5459314d7a4930"  # cheie hexa 
+  expiration: 86400000   # 24 ore timp pana la expirare token
