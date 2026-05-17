@@ -111,4 +111,13 @@ public class TaskController {
     ) {
         return ResponseEntity.ok(taskService.deleteSubTask(taskId, subTaskId));
     }
+
+    // Asignare automata inteligenta in functie de workload-ul echipei
+    // URL complet: POST http://localhost:8080/api/tasks/1/auto-route
+    @PostMapping("/{taskId}/auto-route")
+    @PreAuthorize("hasRole('ADMIN') or " +
+            "@taskService.isUserAuthorizedForTask(#taskId, authentication.name)")
+    public ResponseEntity<Task> autoRouteTask(@PathVariable Long taskId) {
+        return ResponseEntity.ok(taskService.autoRouteTask(taskId));
+    }
 }

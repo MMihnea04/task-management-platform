@@ -212,4 +212,46 @@ public class TaskService {
         // Salvam modificarea progresului în baza de date
         taskRepository.save(task);
     }
+
+    public Task autoRouteTask(Long taskId) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Eroare: Task-ul nu exista!"));
+
+        Project project = task.getProject();
+
+        java.util.List<User> candidates = new java.util.ArrayList<>();
+        candidates.add(project.getOwner());
+        if (project.getMembers() != null) {
+            candidates.addAll(project.getMembers());
+        }
+
+        java.util.List<TaskStatus> activeStatuses = java.util.List.of(TaskStatus.TODO, TaskStatus.IN_PROGRESS);
+
+        User optimalUser = null;
+        long minWorkload = Long.MAX_VALUE;
+
+        for (User candidate : candidates) {
+            long currentWorkload = taskRepository.countByAssigneeAndStatusIn(candidate, activeStatuses);
+
+            if (currentWorkload < minWorkload) {
+                minWorkload = currentWorkload;
+                optimalUser = candidate;
+            }
+            else if (currentWorkload == minWorkload && candidate.equals(project.getOwner())) {
+                optimalUser = candidate;
+            }
+        }
+
+        if (optimalUser == null) {
+            throw new RuntimeException("Eroare: Nu s-au gasit utilizatori eligibili pentru acest proiect!");
+        }
+
+        task.setAssignee(optimalUser);
+        Task routedTask = taskRepository.save(task);
+
+        log.info("SMART ROUTER: Task-ul cu ID {} a fost asignat automat catre '{}' (Workload activ: {} task-uri)",
+                taskId, optimalUser.getUsername(), minWorkload);
+
+        return routedTask;
+    }
 }

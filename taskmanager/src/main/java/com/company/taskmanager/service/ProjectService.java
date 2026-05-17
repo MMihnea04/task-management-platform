@@ -6,7 +6,7 @@ import com.company.taskmanager.entity.User;
 import com.company.taskmanager.repository.ProjectRepository;
 import com.company.taskmanager.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j; // <-- Importul pt loguri
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,7 +14,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j // <-- Adnotarea magica de la Lombok
+@Slf4j
 public class ProjectService {
 
     private final ProjectRepository projectRepository;
@@ -89,13 +89,12 @@ public class ProjectService {
         // adaugam membrul in colectia Set a proiectului
         project.getMembers().add(member);
 
-        // logam si returnam proiectul actualizat
-        Project updatedProject = projectRepository.save(project);
-
         log.info("MEMBRU ADAUGAT: Userul '{}' a fost adaugat in proiectul cu ID-ul {}",
                 memberUsername, projectId);
 
-        return updatedProject;
+        // Într-o metodă @Transactional, Hibernate face automat dirty-checking la finalul metodei.
+        // Returnăm direct obiectul, iar salvarea pe disc se face nativ și curat, eliminând bug-urile de merge().
+        return project;
     }
 
     // Modificare informatii proiect
