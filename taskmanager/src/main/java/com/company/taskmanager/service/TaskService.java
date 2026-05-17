@@ -9,15 +9,15 @@ import com.company.taskmanager.repository.ProjectRepository;
 import com.company.taskmanager.repository.TaskRepository;
 import com.company.taskmanager.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j; // <-- Importul pentru log-uri
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime; // <-- Importul pentru data și oră
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j // <-- Adnotarea pentru Lombok
+@Slf4j
 public class TaskService {
 
     private final TaskRepository taskRepository;
@@ -90,6 +90,30 @@ public class TaskService {
         Task updatedTask = taskRepository.save(task);
 
         log.info("STATUS TASK UPDATE: Task-ul cu ID-ul {} a fost mutat in statusul {}", taskId, newStatus);
+
+        return updatedTask;
+    }
+
+    public Task updateTaskPriority(Long taskId, String priority) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Eroare: Task-ul nu exista!"));
+
+        String upperPriority = priority.toUpperCase();
+
+        // Validare simpla ca sa poata scrie doar prioritati
+        if (!java.util.List.of("LOW", "MEDIUM", "HIGH", "CRITICAL").contains(upperPriority)) {
+            throw new RuntimeException("Eroare: Prioritate invalida! Foloseste LOW, MEDIUM, HIGH sau CRITICAL.");
+        }
+
+        task.setPriority(upperPriority);
+
+        // Resetam ceasul pt ca noul status de prioritate să fie monitorizat curat de acum încolo
+        task.setStatusChangedAt(java.time.LocalDateTime.now());
+        task.setNeedsAttention(false);
+
+        Task updatedTask = taskRepository.save(task);
+
+        log.info("PRIORITY UPDATE: Task-ul cu ID-ul {} a primit prioritatea {}", taskId, upperPriority);
 
         return updatedTask;
     }
