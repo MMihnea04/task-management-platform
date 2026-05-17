@@ -1,0 +1,318 @@
+{
+  "info": {
+    "name": "Task Management Platform - FINAL ENTERPRISE KIT",
+    "_postman_id": "final-enterprise-kit-100-percent",
+    "description": "Colectia Postman finala care acopera toate modulele: Auth, Users, Projects, Tasks (cu deadline si filtre) si Subtasks.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"programator_test\",\n  \"email\": \"test@company.com\",\n  \"password\": \"parola_secreta\"\n}"
+            },
+            "url": {"raw": "http://localhost:8080/api/auth/register", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api", "auth", "register"]}
+          }
+        },
+        {
+          "name": "Login User",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"sef_grup\",\n  \"password\": \"admin\"\n}"
+            },
+            "url": {"raw": "http://localhost:8080/api/auth/login", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api", "auth", "login"]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Users Module",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{jwt_token}}"}],
+            "url": {"raw": "http://localhost:8080/api/users/me", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api", "users", "me"]}
+          }
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PUT",
+            "header": [{"key": "Authorization", "value": "Bearer {{jwt_token}}"}],
+            "url": {
+              "raw": "http://localhost:8080/api/users/me?firstName=Ion&lastName=Popescu",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "users", "me"],
+              "query": [
+                {"key": "firstName", "value": "Ion"},
+                {"key": "lastName", "value": "Popescu"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "List All Users (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{jwt_token}}"}],
+            "url": {"raw": "http://localhost:8080/api/users", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api", "users"]}
+          }
+        },
+        {
+          "name": "Promote User to Admin (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [{"key": "Authorization", "value": "Bearer {{jwt_token}}"}],
+            "url": {"raw": "http://localhost:8080/api/users/programator_test/promote", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api", "users", "programator_test", "promote"]}
+          }
+        },
+        {
+          "name": "Deactivate User (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [{"key": "Authorization", "value": "Bearer {{jwt_token}}"}],
+            "url": {"raw": "http://localhost:8080/api/users/1/deactivate", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api", "users", "1", "deactivate"]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Projects Module",
+      "item": [
+        {
+          "name": "Create Project",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{jwt_token}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Proiectul Alpha\",\n  \"description\": \"Sistem Enterprise de management al resurselor.\"\n}"
+            },
+            "url": {"raw": "http://localhost:8080/api/projects", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api", "projects"]}
+          }
+        },
+        {
+          "name": "Get All Active Projects (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{jwt_token}}"}],
+            "url": {"raw": "http://localhost:8080/api/projects", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api", "projects"]}
+          }
+        },
+        {
+          "name": "Get My Projects",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{jwt_token}}"}],
+            "url": {"raw": "http://localhost:8080/api/projects/my-projects", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api", "projects", "my-projects"]}
+          }
+        },
+        {
+          "name": "Add Member to Project",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Bearer {{jwt_token}}"}],
+            "url": {
+              "raw": "http://localhost:8080/api/projects/1/members?username=programator_test",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "projects", "1", "members"],
+              "query": [{"key": "username", "value": "programator_test"}]
+            }
+          }
+        },
+        {
+          "name": "Update Project Details",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{jwt_token}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Proiectul Alpha Actualizat\",\n  \"description\": \"Descriere noua si optimizata.\"\n}"
+            },
+            "url": {"raw": "http://localhost:8080/api/projects/1", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api", "projects", "1"]}
+          }
+        },
+        {
+          "name": "Soft Delete Project",
+          "request": {
+            "method": "DELETE",
+            "header": [{"key": "Authorization", "value": "Bearer {{jwt_token}}"}],
+            "url": {"raw": "http://localhost:8080/api/projects/1", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api", "projects", "1"]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Tasks Module",
+      "item": [
+        {
+          "name": "Create Task",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{jwt_token}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Implementare Modul Plati\",\n  \"description\": \"Integrare API Stripe conform documentatiei.\",\n  \"projectId\": 1,\n  \"deadline\": \"2026-06-01T17:00:00\"\n}"
+            },
+            "url": {"raw": "http://localhost:8080/api/tasks", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api", "tasks"]}
+          }
+        },
+        {
+          "name": "Update Task Details",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{jwt_token}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Implementare Modul Plati (URGENT)\",\n  \"description\": \"Integrare API Stripe cu webhook-uri.\",\n  \"deadline\": \"2026-05-20T12:00:00\"\n}"
+            },
+            "url": {"raw": "http://localhost:8080/api/tasks/1", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api", "tasks", "1"]}
+          }
+        },
+        {
+          "name": "Get Tasks For Project (Filtered)",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{jwt_token}}"}],
+            "url": {
+              "raw": "http://localhost:8080/api/tasks/project/1?status=TODO&priority=HIGH",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "tasks", "project", "1"],
+              "query": [
+                {"key": "status", "value": "TODO", "description": "TODO, IN_PROGRESS, IN_REVIEW, DONE"},
+                {"key": "priority", "value": "HIGH", "description": "LOW, MEDIUM, HIGH, CRITICAL"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Task Status",
+          "request": {
+            "method": "PATCH",
+            "header": [{"key": "Authorization", "value": "Bearer {{jwt_token}}"}],
+            "url": {
+              "raw": "http://localhost:8080/api/tasks/1/status?status=IN_PROGRESS",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "tasks", "1", "status"],
+              "query": [{"key": "status", "value": "IN_PROGRESS"}]
+            }
+          }
+        },
+        {
+          "name": "Update Task Priority",
+          "request": {
+            "method": "PATCH",
+            "header": [{"key": "Authorization", "value": "Bearer {{jwt_token}}"}],
+            "url": {
+              "raw": "http://localhost:8080/api/tasks/1/priority?priority=CRITICAL",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "tasks", "1", "priority"],
+              "query": [{"key": "priority", "value": "CRITICAL"}]
+            }
+          }
+        },
+        {
+          "name": "Assign Task Manually",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Bearer {{jwt_token}}"}],
+            "url": {
+              "raw": "http://localhost:8080/api/tasks/1/assign?username=programator_test",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "tasks", "1", "assign"],
+              "query": [{"key": "username", "value": "programator_test"}]
+            }
+          }
+        },
+        {
+          "name": "Smart Workload Router (Auto-Assign)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Bearer {{jwt_token}}"}],
+            "url": {"raw": "http://localhost:8080/api/tasks/1/auto-route", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api", "tasks", "1", "auto-route"]}
+          }
+        },
+        {
+          "name": "Delete Task",
+          "request": {
+            "method": "DELETE",
+            "header": [{"key": "Authorization", "value": "Bearer {{jwt_token}}"}],
+            "url": {"raw": "http://localhost:8080/api/tasks/1", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api", "tasks", "1"]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. SubTasks Checklist",
+      "item": [
+        {
+          "name": "Add SubTask",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Bearer {{jwt_token}}"}],
+            "url": {
+              "raw": "http://localhost:8080/api/tasks/1/subtasks?title=Verificare conexiune DB",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "tasks", "1", "subtasks"],
+              "query": [{"key": "title", "value": "Verificare conexiune DB"}]
+            }
+          }
+        },
+        {
+          "name": "Toggle SubTask (Check/Uncheck)",
+          "request": {
+            "method": "PATCH",
+            "header": [{"key": "Authorization", "value": "Bearer {{jwt_token}}"}],
+            "url": {"raw": "http://localhost:8080/api/tasks/1/subtasks/1/toggle", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api", "tasks", "1", "subtasks", "1", "toggle"]}
+          }
+        },
+        {
+          "name": "Delete SubTask",
+          "request": {
+            "method": "DELETE",
+            "header": [{"key": "Authorization", "value": "Bearer {{jwt_token}}"}],
+            "url": {"raw": "http://localhost:8080/api/tasks/1/subtasks/1", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api", "tasks", "1", "subtasks", "1"]}
+          }
+        }
+      ]
+    }
+  ]
+}
