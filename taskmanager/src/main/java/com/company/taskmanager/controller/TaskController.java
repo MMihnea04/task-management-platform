@@ -4,6 +4,7 @@ import com.company.taskmanager.dto.TaskRequest;
 import com.company.taskmanager.entity.Task;
 import com.company.taskmanager.entity.TaskStatus;
 import com.company.taskmanager.service.TaskService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,22 +23,36 @@ public class TaskController {
     // Creare task nou (permis: admin sau membrii proiect)
     // URL complet: POST http://localhost:8080/api/tasks
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN') or " +
-            "@taskService.isUserAuthorizedForProject(#request.projectId, authentication.name)")
+    @PreAuthorize("hasRole('ADMIN') or @taskService.isUserAuthorizedForProject(#request.projectId, authentication.name)")
     public ResponseEntity<Task> createTask(
-            @RequestBody TaskRequest request,
+            @Valid @RequestBody TaskRequest request,
             Principal principal
     ) {
         return ResponseEntity.ok(taskService.createTask(request, principal.getName()));
     }
 
-    // Afisare task-uri dintr-un proiect (permis: admin sau membrii proiect)
-    // URL complet: GET http://localhost:8080/api/tasks/project/1
+    // Editare generala task (Titlu, Descriere, Deadline)
+    // URL complet: PUT http://localhost:8080/api/tasks/1
+    @PutMapping("/{taskId}")
+    @PreAuthorize("hasRole('ADMIN') or @taskService.isUserAuthorizedForTask(#taskId, authentication.name)")
+    public ResponseEntity<Task> updateTaskDetails(
+            @PathVariable Long taskId,
+            @Valid @RequestBody TaskRequest request
+    ) {
+        return ResponseEntity.ok(taskService.updateTaskDetails(taskId, request.getTitle(), request.getDescription(), request.getDeadline()));
+    }
+
+    // Afisare task-uri dintr-un proiect CU filtrare optionala
+    // URL complet: GET http://localhost:8080/api/tasks/project/1?status=TODO&priority=HIGH
     @GetMapping("/project/{projectId}")
     @PreAuthorize("hasRole('ADMIN') or " +
             "@taskService.isUserAuthorizedForProject(#projectId, authentication.name)")
-    public ResponseEntity<List<Task>> getTasksForProject(@PathVariable Long projectId) {
-        return ResponseEntity.ok(taskService.getTasksForProject(projectId));
+    public ResponseEntity<List<Task>> getTasksForProject(
+            @PathVariable Long projectId,
+            @RequestParam(required = false) TaskStatus status,
+            @RequestParam(required = false) String priority
+    ) {
+        return ResponseEntity.ok(taskService.getTasksForProjectWithFilters(projectId, status, priority));
     }
 
     // Update status la task
@@ -110,6 +125,15 @@ public class TaskController {
             @PathVariable Long subTaskId
     ) {
         return ResponseEntity.ok(taskService.deleteSubTask(taskId, subTaskId));
+    }
+
+    // Stergere task
+    // URL complet: DELETE http://localhost:8080/api/tasks/1
+    @DeleteMapping("/{taskId}")
+    @PreAuthorize("hasRole('ADMIN') or @taskService.isUserAuthorizedForTask(#taskId, authentication.name)")
+    public ResponseEntity<String> deleteTask(@PathVariable Long taskId) {
+        taskService.deleteTask(taskId);
+        return ResponseEntity.ok("Task-ul a fost sters cu succes!");
     }
 
     // Asignare automata inteligenta in functie de workload-ul echipei

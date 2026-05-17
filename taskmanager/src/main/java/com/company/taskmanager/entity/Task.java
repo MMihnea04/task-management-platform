@@ -37,6 +37,9 @@ public class Task {
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "deadline")
+    private LocalDateTime deadline;
+
     @Column(nullable = false)
     @Builder.Default
     private int progress = 0; // % de la 0 la 100
