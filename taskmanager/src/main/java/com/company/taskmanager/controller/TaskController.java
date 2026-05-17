@@ -75,4 +75,40 @@ public class TaskController {
     ) {
         return ResponseEntity.ok(taskService.updateTaskPriority(taskId, priority));
     }
+
+    // Adaugare subtask nou intr-un task
+    // URL complet: POST http://localhost:8080/api/tasks/1/subtasks?title=nume_subtask
+    @PostMapping("/{taskId}/subtasks")
+    @PreAuthorize("hasRole('ADMIN') or " +
+            "@taskService.isUserAuthorizedForTask(#taskId, authentication.name)")
+    public ResponseEntity<Task> addSubTask(
+            @PathVariable Long taskId,
+            @RequestParam String title
+    ) {
+        return ResponseEntity.ok(taskService.addSubTask(taskId, title));
+    }
+
+    // Bifare / Debifare subtask
+    // URL complet: PATCH http://localhost:8080/api/tasks/1/subtasks/5/toggle
+    @PatchMapping("/{taskId}/subtasks/{subTaskId}/toggle")
+    @PreAuthorize("hasRole('ADMIN') or " +
+            "@taskService.isUserAuthorizedForTask(#taskId, authentication.name)")
+    public ResponseEntity<Task> toggleSubTask(
+            @PathVariable Long taskId,
+            @PathVariable Long subTaskId
+    ) {
+        return ResponseEntity.ok(taskService.toggleSubTask(subTaskId));
+    }
+
+    // Stergere subtask dintr-un task
+    // URL complet: DELETE http://localhost:8080/api/tasks/1/subtasks/5
+    @DeleteMapping("/{taskId}/subtasks/{subTaskId}")
+    @PreAuthorize("hasRole('ADMIN') or " +
+            "@taskService.isUserAuthorizedForTask(#taskId, authentication.name)")
+    public ResponseEntity<Task> deleteSubTask(
+            @PathVariable Long taskId,
+            @PathVariable Long subTaskId
+    ) {
+        return ResponseEntity.ok(taskService.deleteSubTask(taskId, subTaskId));
+    }
 }

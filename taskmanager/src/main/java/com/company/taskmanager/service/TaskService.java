@@ -2,10 +2,12 @@ package com.company.taskmanager.service;
 
 import com.company.taskmanager.dto.TaskRequest;
 import com.company.taskmanager.entity.Project;
+import com.company.taskmanager.entity.SubTask;
 import com.company.taskmanager.entity.Task;
 import com.company.taskmanager.entity.TaskStatus;
 import com.company.taskmanager.entity.User;
 import com.company.taskmanager.repository.ProjectRepository;
+import com.company.taskmanager.repository.SubTaskRepository;
 import com.company.taskmanager.repository.TaskRepository;
 import com.company.taskmanager.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,7 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
+    private final SubTaskRepository subTaskRepository;
 
     // Verifica daca un utilizator are acces la un proiect (admin, owner sau membru)
     public boolean isUserAuthorizedForProject(Long projectId, String username) {
@@ -138,5 +141,75 @@ public class TaskService {
         log.info("TASK ASIGNAT: Task-ul cu ID-ul {} a fost asignat catre utilizatorul '{}'", taskId, assigneeUsername);
 
         return assignedTask;
+    }
+
+    public Task addSubTask(Long taskId, String title) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Eroare: Task-ul parinte nu exista!"));
+
+        SubTask subTask = SubTask.builder()
+                .title(title)
+                .completed(false)
+                .task(task)
+                .build();
+
+        subTaskRepository.save(subTask);
+
+        // Fortam reincarcarea listei pt a include subtask-ul nou
+        task.getSubTasks().add(subTask);
+        recalculateAndSaveProgress(task);
+
+        log.info("SUBTASK ADAUGAT: Subtask-ul '{}' a fost adaugat la task-id {}", title, taskId);
+        return task;
+    }
+
+    public Task toggleSubTask(Long subTaskId) {
+        SubTask subTask = subTaskRepository.findById(subTaskId)
+                .orElseThrow(() -> new RuntimeException("Eroare: Subtask-ul nu exista!"));
+
+        // Inversam starea booleana, din bifat in nebifat sau viceversa
+        subTask.setCompleted(!subTask.isCompleted());
+        subTaskRepository.save(subTask);
+
+        Task task = subTask.getTask();
+        recalculateAndSaveProgress(task);
+
+        log.info("SUBTASK TOGGLE: Subtask-ul cu ID {} are acum starea completed = {}", subTaskId, subTask.isCompleted());
+        return task;
+    }
+
+    public Task deleteSubTask(Long taskId, Long subTaskId) {
+        SubTask subTask = subTaskRepository.findById(subTaskId)
+                .orElseThrow(() -> new RuntimeException("Eroare: Subtask-ul nu exista!"));
+
+        subTaskRepository.delete(subTask);
+
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Eroare: Task-ul nu exista!"));
+
+        task.getSubTasks().remove(subTask);
+        recalculateAndSaveProgress(task);
+
+        log.info("SUBTASK STERS: Subtask-ul cu ID {} a fost sters din task-id {}", subTaskId, taskId);
+        return task;
+    }
+
+    private void recalculateAndSaveProgress(Task task) {
+        List<SubTask> subTasks = task.getSubTasks();
+
+        if (subTasks == null || subTasks.isEmpty()) {
+            task.setProgress(0);
+        } else {
+            long completedCount = subTasks.stream()
+                    .filter(SubTask::isCompleted)
+                    .count();
+
+            // Formula: (Bifate / Total) * 100
+            int newProgress = (int) ((completedCount * 100) / subTasks.size());
+            task.setProgress(newProgress);
+        }
+
+        // Salvam modificarea progresului în baza de date
+        taskRepository.save(task);
     }
 }

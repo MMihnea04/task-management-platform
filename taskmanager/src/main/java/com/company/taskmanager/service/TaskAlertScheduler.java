@@ -18,13 +18,6 @@ public class TaskAlertScheduler {
 
     private final TaskRepository taskRepository;
 
-    //update command already-made pt testare:
-    //UPDATE tasks
-    //SET priority = 'CRITICAL',
-    //    status_changed_at = NOW() - INTERVAL '1 day',
-    //    needs_attention = false
-    //WHERE id = 1;
-
     // Ruleaza la fiecare ora
     // Testing: Inlocuieste cron-ul cu fixedDelay = 10000(10 sec)
     @Scheduled(cron = "0 0 * * * *")
@@ -32,8 +25,8 @@ public class TaskAlertScheduler {
         log.info("SLA CRON: Se porneste scanarea task-urilor pentru verificarea blocajelor...");
 
         // Calculam pragul de 24 de ore in urma
-        // Testing: Inlocuim cu LocalDateTime threshold = LocalDateTime.now().minusMinutes(2);
-        // ca sa vedem daca au trecut 2 min in loc de 24 de ore
+        // Testing: Inlocuim cu LocalDateTime threshold = LocalDateTime.now().minusMinutes(1);
+        // ca sa vedem daca a trecut 1 min in loc de 24 de ore
         LocalDateTime threshold = LocalDateTime.now().minusHours(24);
 
         // Cautam toate task-urile active din DB
