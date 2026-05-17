@@ -1,4 +1,8 @@
 spring:
+  output:
+    ansi:
+      enabled: always
+
   datasource:
     url: jdbc:postgresql://localhost:5432/taskmanager
     username: admin
