@@ -13,12 +13,11 @@ Aplicatia ajuta in organizarea echipelor si a gestionii progresului proiectelor.
 
 ## Cuprins
 1. [Managementul Proiectului prin Jira](#managementul-proiectului-prin-jira)
-2. [Decizii Arhitecturale si de Design (Rationale)](#decizii-arhitecturale-si-de-design-rationale)
-3. [Blocaje Tehnice si Solutii (Technical Roadblocks)](#blocaje-tehnice-si-solutii-technical-roadblocks)
+2. [Decizii Arhitecturale si de Design](#decizii-arhitecturale-si-de-design)
+3. [Blocaje Tehnice si Solutii](#blocaje-tehnice-si-solutii)
 4. [Matricea Functionalitatilor](#matricea-functionalitatilor)
 5. [Stack Tehnologic](#stack-tehnologic)
-6. [Ghid de Pornire Rapida (DevOps Integration)](#ghid-de-pornire-rapida-devops-integration)
-7. [Kit de Testare API (Postman)](#kit-de-testare-api-postman)
+6. [Guide de Pornire Rapida](#guide-de-pornire-rapida)
 
 ---
 
@@ -40,12 +39,12 @@ In dezvoltarea acestei platforme, s-a pus accent pe adoptarea standardelor de in
 ### 1. Modelare `Set<User>` in Many-to-Many
 * **Abordare:** Utilizarea colectiilor JPA `Set` in locul `List` pentru relatia Many-to-Many dintre Proiecte si Membri.
 * **Ratiune:** Hibernate orienteaza colectiile `List` in relatiile Many-to-Many intr-un mod ineficient, prin stergerea si re-insertia completa a randurilor din tabela de legatura la orice modificare a listei.
-Alegerea `Set` asigura unicitatea membrilor intr-un si optimizeaza operatiunile de modificare pe tabela de legatura.
+  Alegerea `Set` asigura unicitatea membrilor intr-un si optimizeaza operatiunile de modificare pe tabela de legatura.
 
 ### 2. Strategia de Soft Delete
 * **Abordare:** Implementarea (Soft Delete prin flag-ul `deleted = true`.
-* **Ratiune:** In sistemele de management, hard-delete-ul este o operatiune distructiva care elimina complet tabela. S-a implementat o solutie bazata pe flag, unde obiectele sunt marcate ca sterse, dar raman fizic pe disc. 
-Prin integrarea filtrelor, proiectele sterse sunt omise din fluxul operational, dar raman pe memoria RAM.
+* **Ratiune:** In sistemele de management, hard-delete-ul este o operatiune distructiva care elimina complet tabela. S-a implementat o solutie bazata pe flag, unde obiectele sunt marcate ca sterse, dar raman fizic pe disc.
+  Prin integrarea filtrelor, proiectele sterse sunt omise din fluxul operational, dar raman pe memoria RAM.
 
 ---
 
@@ -55,8 +54,8 @@ Dezvoltarea a implicat rezolvarea unor probleme critice specifice Spring Boot si
 
 ### Capcana Lombok `@Data` in Entitatile JPA
 * **Problema:** S-a identificat o exceptie `duplicate key` aruncata de PostgreSQL la adaugarea membrilor intr-un proiect, chiar daca utilizatorul nu se afla anterior acolo.
-* **Cauza:** `@Data` de la Lombok genereaza automat metodele `equals()` si `hashCode()` scanand toate campurile, inclusiv colectiile Lazy. 
-Cand starea unei colectii se modifica in memorie, codul hash se schimba, destabilizand mecanismul de *checking* al Hibernate.
+* **Cauza:** `@Data` de la Lombok genereaza automat metodele `equals()` si `hashCode()` scanand toate campurile, inclusiv colectiile Lazy.
+  Nu de puține ori, cand starea unei colectii se modifica in memorie, codul hash se schimba, destabilizand mecanismul de *checking* al Hibernate.
 * **Solutia:** S-a eliminat `@Data` de pe entitatile strategice, trecandu-se la adnotari `@Getter`, `@Setter` si configurand explicit `@EqualsAndHashCode(onlyExplicitlyIncluded = true)` raportat strict la ID-ul unic al entitatii.
 
 ### Recursivitatea Infinita in Serializarea JSON
@@ -74,16 +73,16 @@ Aplicatia implementeaza complet toate cerintele functionale, organizate pe modul
 * **Management Utilizatori:** Permite vizualizarea si actualizarea informatiilor de profil pentru utilizatorii autentificati, dar si actiuni administrative de listare globala, promovare la gradul de Admin si dezactivare conturi.
 * **Management Proiecte:** Flux operational complet de creare, adaugare membri, editare si stergere logica. Utilizatorii pot accesa exclusiv datele proiectelor in care sunt owner sau membru.
 * **Management Task-uri:** Permite actiuni de tip CRUD, setare deadline, actualizare prioritati si schimbare controlata de status. Include suport pentru filtrare dupa status si prioritate.
-* **Sistem de Validare si Global Exception Handler:** Toate request-urile primite in sistem sunt verificate prin adnotari de validare (`@Valid`, `@NotBlank`, `@Email`). 
-Exceptiile de sistem si erorile de validare sunt interceptate de `GlobalExceptionHandler`, returnand raspunsuri HTTP clare si status codes corecte.
+* **Sistem de Validare si Global Exception Handler:** Toate request-urile primite in sistem sunt verificate prin adnotari de validare (`@Valid`, `@NotBlank`, `@Email`).
+  Exceptiile de sistem si erorile de validare sunt interceptate de `GlobalExceptionHandler`, returnand raspunsuri HTTP clare si status codes corecte.
 * **Audit si Logging:** Utilizarea Slf4j pentru deosebirea operatiunilor critice in consola aplicatiei (login succes, inregistrare useri, creari si stergeri de resurse).
 
 ### Functionalitati Extra
 * **Checklist cu Progres Dinamic:** Un task poate stoca multiple subtask-uri. Sistemul intercepteaza automat adaugarea, stergerea sau comutarea starii unui subtask si recalculeaza instant procentul global de progres al task-ului parinte in DB.
 * **Smart Workload Router:** Algoritm de asignare automata a task-urilor pe baza availability-ului membrilor. Noul task este distribuit automat programatorului cu cele mai putine sarcini active (`TODO`, `IN_PROGRESS`).
-Avem o regula de *Tie-Breaker* ce favorizeaza Owner-ul de proiect in caz de egalitate perfecta, iar in caz in care acesta are mai multe task-uri este aplica ordinea adaugarii membrilor in proiect.
-* **Monitorizare Proactiva:** Un serviciu automatizat `@Scheduled` ruleaza recurent in fundal pentru a analiza performanta.Avem task-uri de diferite prioritati(`LOW`,`MEDIUM`,`HIGH`,`CRITICAL`). 
-Acesta marcheaza automat task-urile `CRITICAL` blocate in lucru de mai mult de 24 de ore cu flag-ul `needs_attention = true`, alertand echipa prin log-uri.
+  Avem o regula de *Tie-Breaker* ce favorizeaza Owner-ul de proiect in caz de egalitate perfecta, iar in caz in care acesta are mai multe task-uri este aplica ordinea adaugarii membrilor in proiect.
+* **Monitorizare Proactiva:** Un serviciu automatizat `@Scheduled` ruleaza recurent in fundal pentru a analiza performanta. Avem task-uri de diferite prioritati (`LOW`, `MEDIUM`, `HIGH`, `CRITICAL`).
+  Acesta marcheaza automat task-urile `CRITICAL` blocate in lucru de mai mult de 24 de ore cu flag-ul `needs_attention = true`, alertand echipa prin log-uri.
 
 ---
 
@@ -98,11 +97,11 @@ Acesta marcheaza automat task-urile `CRITICAL` blocate in lucru de mai mult de 2
 
 ---
 
-## Guide de Pornire Rapida (DevOps Integration)
+## Guide de Pornire Rapida
 
 Aplicatia este containerizata complet. S-a utilizat un mecanism de **Multi-Stage Build** in Dockerfile pentru a compila codul si a rula aplicatia intr-un mediu izolat si securizat.
 
-### Pornirea aplicatiei (Deployment local)
+### Pornirea aplicatiei
 Navigheaza in folderul radacina al proiectului si ruleaza in terminal:
 ```bash
 docker compose up --build -d
