@@ -18,6 +18,13 @@ public class TaskAlertScheduler {
 
     private final TaskRepository taskRepository;
 
+    //update command already-made pt testare:
+    //UPDATE tasks
+    //SET priority = 'CRITICAL',
+    //    status_changed_at = NOW() - INTERVAL '1 day',
+    //    needs_attention = false
+    //WHERE id = 1;
+
     // Ruleaza la fiecare ora
     // Testing: Inlocuieste cron-ul cu fixedDelay = 10000(10 sec)
     @Scheduled(cron = "0 0 * * * *")

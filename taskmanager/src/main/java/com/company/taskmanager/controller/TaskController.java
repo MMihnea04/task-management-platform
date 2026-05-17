@@ -63,4 +63,16 @@ public class TaskController {
     ) {
         return ResponseEntity.ok(taskService.assignTask(taskId, username));
     }
+
+    // Update prioritate la task
+    // URL complet: PATCH http://localhost:8080/api/tasks/1/priority?priority=CRITICAL
+    @PatchMapping("/{taskId}/priority")
+    @PreAuthorize("hasRole('ADMIN') or " +
+            "@taskService.isUserAuthorizedForTask(#taskId, authentication.name)")
+    public ResponseEntity<Task> updateTaskPriority(
+            @PathVariable Long taskId,
+            @RequestParam String priority
+    ) {
+        return ResponseEntity.ok(taskService.updateTaskPriority(taskId, priority));
+    }
 }
