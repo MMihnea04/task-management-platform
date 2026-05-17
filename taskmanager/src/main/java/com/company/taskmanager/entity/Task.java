@@ -35,6 +35,18 @@ public class Task {
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private String priority = "MEDIUM"; // LOW, MEDIUM, HIGH, CRITICAL
+
+    @Column(name = "needs_attention", nullable = false)
+    @Builder.Default
+    private boolean needsAttention = false; // caz in care depaseste 24 de ore CRITICAL
+
+    @Column(name = "status_changed_at")
+    @Builder.Default
+    private LocalDateTime statusChangedAt = LocalDateTime.now();
+
     // Relatia cu proiectul (un task apartine unui singur proiect)
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "project_id", nullable = false)
