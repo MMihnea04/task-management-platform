@@ -74,9 +74,6 @@ public class User implements UserDetails {
     @Builder.Default
     private Set<Role> roles = new HashSet<>();
 
-    // --- Metode din interfata UserDetails ---
-    // Spring Security foloseste aceste metode pentru autentificare
-
     // primim prin roles.stream() rolurile user-ului si le transformam in SimpleGrantedAuthority
     // pt a satisface formatul Spring Security, iar apoi adaugam in set pt a evita dubluri
     @Override
