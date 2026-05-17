@@ -13,6 +13,7 @@ import com.company.taskmanager.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -65,6 +66,7 @@ public class TaskService {
                 .status(TaskStatus.TODO) // Orice task nou intra cu status TODO
                 .project(project)
                 .creator(creator)
+                .deadline(request.getDeadline())
                 .build();
 
         Task savedTask = taskRepository.save(task);
@@ -75,9 +77,43 @@ public class TaskService {
         return savedTask;
     }
 
-    // Arata task-uri per proiect
-    public List<Task> getTasksForProject(Long projectId) {
-        return taskRepository.findByProjectId(projectId);
+    // Editare generala task (Titlu, Descriere)
+    @Transactional
+    public Task updateTaskDetails(Long taskId, String title, String description, LocalDateTime deadline) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Eroare: Task-ul nu a fost gasit!"));
+
+        if (title != null && !title.isBlank()) {
+            task.setTitle(title);
+        }
+        if (description != null && !description.isBlank()) {
+            task.setDescription(description);
+        }
+        if (deadline != null) {
+            task.setDeadline(deadline);
+        }
+
+        return taskRepository.save(task);
+    }
+
+    // Filtrare task-uri dintr-un proiect dupa status si prioritate (optional)
+    public List<Task> getTasksForProjectWithFilters(Long projectId, TaskStatus status, String priority) {
+        // Luam toate task-urile proiectului
+        List<Task> tasks = taskRepository.findByProjectId(projectId);
+
+        // Filtram prin Stream API daca s-au trimis parametrii
+        if (status != null) {
+            tasks = tasks.stream()
+                    .filter(t -> t.getStatus() == status)
+                    .toList();
+        }
+        if (priority != null && !priority.isBlank()) {
+            tasks = tasks.stream()
+                    .filter(t -> priority.equals(t.getPriority()))
+                    .toList();
+        }
+
+        return tasks;
     }
 
     // Mutare task dintr-un status in altul
@@ -116,7 +152,7 @@ public class TaskService {
 
         Task updatedTask = taskRepository.save(task);
 
-        log.info("PRIORITY UPDATE: Task-ul cu ID-ul {} a primit prioritatea {}", taskId, upperPriority);
+        log.info("PRIORITY UPDATE: Task-ul cu ID-ul {} a received prioritatea {}", taskId, upperPriority);
 
         return updatedTask;
     }
@@ -192,6 +228,16 @@ public class TaskService {
 
         log.info("SUBTASK STERS: Subtask-ul cu ID {} a fost sters din task-id {}", subTaskId, taskId);
         return task;
+    }
+
+    // Stergere fizica Task
+    @Transactional
+    public void deleteTask(Long taskId) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Eroare: Task-ul nu a fost gasit!"));
+
+        taskRepository.delete(task);
+        log.info("TASK STERS: Task-ul cu ID-ul {} a fost sters din sistem.", taskId);
     }
 
     private void recalculateAndSaveProgress(Task task) {
