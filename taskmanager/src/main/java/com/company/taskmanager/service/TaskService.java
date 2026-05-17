@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j; // <-- Importul pentru log-uri
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime; // <-- Importul pentru data și oră
 import java.util.List;
 
 @Service
@@ -82,6 +83,9 @@ public class TaskService {
                 .orElseThrow(() -> new RuntimeException("Eroare: Task-ul nu exista!"));
 
         task.setStatus(newStatus);
+
+        task.setStatusChangedAt(LocalDateTime.now()); // Resetam timpul de cand task-ul se afla in noul status
+        task.setNeedsAttention(false);               // Daca task-ul s-a miscat, inseamna ca nu mai e blocat
 
         Task updatedTask = taskRepository.save(task);
 
