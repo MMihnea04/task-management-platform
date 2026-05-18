@@ -1,15 +1,37 @@
+version: '3.8'
+
 services:
-  postgres:
+  db:
     image: postgres:15
     container_name: taskmanager-db
     environment:
-      POSTGRES_DB: taskmanager        # nume datebase
-      POSTGRES_USER: admin            # user
-      POSTGRES_PASSWORD: admin123     # parola
+      POSTGRES_DB: taskmanager
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
     ports:
-      - "5432:5432"                   # port local:port container
+      - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data  # pentru a persista datele intre reset-uri
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d taskmanager"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: ./taskmanager
+      dockerfile: Dockerfile
+    container_name: taskmanager-app
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/taskmanager
+      SPRING_DATASOURCE_USERNAME: admin
+      SPRING_DATASOURCE_PASSWORD: admin123
 
 volumes:
-  postgres_data:
+  pgdata:
