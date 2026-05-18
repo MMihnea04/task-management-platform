@@ -29,6 +29,7 @@ public class TaskService {
     private final SubTaskRepository subTaskRepository;
 
     // Verifica daca un utilizator are acces la un proiect (admin, owner sau membru)
+    @Transactional(readOnly = true)
     public boolean isUserAuthorizedForProject(Long projectId, String username) {
         // cautam proiectul
         Project project = projectRepository.findById(projectId).orElse(null);
@@ -45,6 +46,7 @@ public class TaskService {
     }
 
     // Verifica daca userul are acces direct la un Task existent (pentru modificare/asignare)
+    @Transactional(readOnly = true)
     public boolean isUserAuthorizedForTask(Long taskId, String username) {
         Task task = taskRepository.findById(taskId).orElse(null);
         if (task == null) return false;
@@ -53,6 +55,7 @@ public class TaskService {
         return isUserAuthorizedForProject(task.getProject().getId(), username);
     }
 
+    @Transactional
     public Task createTask(TaskRequest request, String creatorUsername) {
         Project project = projectRepository.findById(request.getProjectId())
                 .orElseThrow(() -> new RuntimeException("Eroare: Proiectul nu exista!"));
@@ -70,6 +73,9 @@ public class TaskService {
                 .build();
 
         Task savedTask = taskRepository.save(task);
+
+        // Fortam Hibernate sa aduca datele Lazy pt JSON response
+        initializeTaskRelations(savedTask);
 
         log.info("TASK CREAT: Userul '{}' a creat task-ul '{}' (ID: {}) in proiectul cu ID-ul {}",
                 creatorUsername, savedTask.getTitle(), savedTask.getId(), project.getId());
@@ -93,10 +99,14 @@ public class TaskService {
             task.setDeadline(deadline);
         }
 
-        return taskRepository.save(task);
+        Task savedTask = taskRepository.save(task);
+        initializeTaskRelations(savedTask);
+
+        return savedTask;
     }
 
     // Filtrare task-uri dintr-un proiect dupa status si prioritate (optional)
+    @Transactional(readOnly = true)
     public List<Task> getTasksForProjectWithFilters(Long projectId, TaskStatus status, String priority) {
         // Luam toate task-urile proiectului
         List<Task> tasks = taskRepository.findByProjectId(projectId);
@@ -113,10 +123,14 @@ public class TaskService {
                     .toList();
         }
 
+        // Initialize lazy relations for the whole list
+        tasks.forEach(this::initializeTaskRelations);
+
         return tasks;
     }
 
     // Mutare task dintr-un status in altul
+    @Transactional
     public Task updateTaskStatus(Long taskId, TaskStatus newStatus) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Eroare: Task-ul nu exista!"));
@@ -127,12 +141,14 @@ public class TaskService {
         task.setNeedsAttention(false);               // Daca task-ul s-a miscat, inseamna ca nu mai e blocat
 
         Task updatedTask = taskRepository.save(task);
+        initializeTaskRelations(updatedTask);
 
         log.info("STATUS TASK UPDATE: Task-ul cu ID-ul {} a fost mutat in statusul {}", taskId, newStatus);
 
         return updatedTask;
     }
 
+    @Transactional
     public Task updateTaskPriority(Long taskId, String priority) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Eroare: Task-ul nu exista!"));
@@ -151,6 +167,7 @@ public class TaskService {
         task.setNeedsAttention(false);
 
         Task updatedTask = taskRepository.save(task);
+        initializeTaskRelations(updatedTask);
 
         log.info("PRIORITY UPDATE: Task-ul cu ID-ul {} a received prioritatea {}", taskId, upperPriority);
 
@@ -158,6 +175,7 @@ public class TaskService {
     }
 
     // Asign task catre un utilizator
+    @Transactional
     public Task assignTask(Long taskId, String assigneeUsername) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Eroare: Task-ul nu a fost gasit!"));
@@ -173,12 +191,14 @@ public class TaskService {
         task.setAssignee(assignee);
 
         Task assignedTask = taskRepository.save(task);
+        initializeTaskRelations(assignedTask);
 
         log.info("TASK ASIGNAT: Task-ul cu ID-ul {} a fost asignat catre utilizatorul '{}'", taskId, assigneeUsername);
 
         return assignedTask;
     }
 
+    @Transactional
     public Task addSubTask(Long taskId, String title) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Eroare: Task-ul parinte nu exista!"));
@@ -195,10 +215,13 @@ public class TaskService {
         task.getSubTasks().add(subTask);
         recalculateAndSaveProgress(task);
 
+        initializeTaskRelations(task);
+
         log.info("SUBTASK ADAUGAT: Subtask-ul '{}' a fost adaugat la task-id {}", title, taskId);
         return task;
     }
 
+    @Transactional
     public Task toggleSubTask(Long subTaskId) {
         SubTask subTask = subTaskRepository.findById(subTaskId)
                 .orElseThrow(() -> new RuntimeException("Eroare: Subtask-ul nu exista!"));
@@ -210,10 +233,13 @@ public class TaskService {
         Task task = subTask.getTask();
         recalculateAndSaveProgress(task);
 
+        initializeTaskRelations(task);
+
         log.info("SUBTASK TOGGLE: Subtask-ul cu ID {} are acum starea completed = {}", subTaskId, subTask.isCompleted());
         return task;
     }
 
+    @Transactional
     public Task deleteSubTask(Long taskId, Long subTaskId) {
         SubTask subTask = subTaskRepository.findById(subTaskId)
                 .orElseThrow(() -> new RuntimeException("Eroare: Subtask-ul nu exista!"));
@@ -225,6 +251,8 @@ public class TaskService {
 
         task.getSubTasks().remove(subTask);
         recalculateAndSaveProgress(task);
+
+        initializeTaskRelations(task);
 
         log.info("SUBTASK STERS: Subtask-ul cu ID {} a fost sters din task-id {}", subTaskId, taskId);
         return task;
@@ -259,6 +287,7 @@ public class TaskService {
         taskRepository.save(task);
     }
 
+    @Transactional
     public Task autoRouteTask(Long taskId) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Eroare: Task-ul nu exista!"));
@@ -294,10 +323,24 @@ public class TaskService {
 
         task.setAssignee(optimalUser);
         Task routedTask = taskRepository.save(task);
+        initializeTaskRelations(routedTask);
 
         log.info("SMART ROUTER: Task-ul cu ID {} a fost asignat automat catre '{}' (Workload activ: {} task-uri)",
                 taskId, optimalUser.getUsername(), minWorkload);
 
         return routedTask;
+    }
+
+    // Metoda ajutatoare pentru a forta Hibernate sa citeasca datele inainte de a le trimite catre JSON
+    private void initializeTaskRelations(Task task) {
+        if (task.getCreator() != null) task.getCreator().getRoles().size();
+        if (task.getAssignee() != null) task.getAssignee().getRoles().size();
+        if (task.getSubTasks() != null) task.getSubTasks().size();
+        if (task.getProject() != null) {
+            task.getProject().getOwner().getRoles().size();
+            if (task.getProject().getMembers() != null) {
+                task.getProject().getMembers().forEach(m -> m.getRoles().size());
+            }
+        }
     }
 }

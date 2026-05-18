@@ -1,9 +1,13 @@
 package com.company.taskmanager.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -11,7 +15,10 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Data
+@Getter
+@Setter
+@ToString(exclude = {"project", "creator", "assignee", "subTasks"})
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -21,6 +28,7 @@ public class Task {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Long id;
 
     @Column(nullable = false)
@@ -46,6 +54,7 @@ public class Task {
 
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
+    @JsonIgnoreProperties("task") // Taie bucla infinita de JSON catre SubTask
     private List<SubTask> subTasks = new ArrayList<>();
 
     @Column(nullable = false, length = 20)
@@ -63,6 +72,7 @@ public class Task {
     // Relatia cu proiectul (un task apartine unui singur proiect)
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "project_id", nullable = false)
+    @JsonIgnoreProperties({"owner", "members"})
     private Project project;
 
     // Relatia cu user-ul care a creat task-ul
@@ -71,7 +81,6 @@ public class Task {
     private User creator;
 
     // Relatia cu User-ul care trebuie sa rezolve task-ul
-    // acesta poate sa fie creat si fara sa fie asignat cuiva (nullable = true)
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "assignee_id")
     private User assignee;

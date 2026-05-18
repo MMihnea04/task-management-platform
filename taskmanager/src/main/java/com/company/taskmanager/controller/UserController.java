@@ -17,18 +17,24 @@ public class UserController {
 
     private final UserService userService;
 
-    @GetMapping("/me")
+    @GetMapping("/profile")
     public ResponseEntity<User> getMyProfile(Principal principal) {
         return ResponseEntity.ok(userService.getMyProfile(principal.getName()));
     }
 
-    @PutMapping("/me")
-    public ResponseEntity<User> updateMyProfile(
-            Principal principal,
-            @RequestParam String firstName,
-            @RequestParam String lastName
-    ) {
-        return ResponseEntity.ok(userService.updateMyProfile(principal.getName(), firstName, lastName));
+    @PutMapping("/profile")
+    public ResponseEntity<User> updateMyProfile(Principal principal, @RequestBody User requestBody) {
+        return ResponseEntity.ok(userService.updateMyProfile(
+                principal.getName(),
+                requestBody.getFirstName(),
+                requestBody.getLastName(),
+                requestBody.getEmail()
+        ));
+    }
+
+    @GetMapping("/my-projects")
+    public ResponseEntity<?> getMyProjects(Principal principal) {
+        return ResponseEntity.ok(userService.getMyProjects(principal.getName()));
     }
 
     @GetMapping
@@ -44,10 +50,10 @@ public class UserController {
         return ResponseEntity.ok("Utilizatorul a fost dezactivat cu succes!");
     }
 
-    @PatchMapping("/{username}/promote")
+    @PatchMapping("/{id}/role")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<String> promoteToAdmin(@PathVariable String username) {
-        String responseMessage = userService.promoteUserToAdmin(username);
+    public ResponseEntity<String> modifyUserRole(@PathVariable Long id, @RequestParam String role) {
+        String responseMessage = userService.modifyUserRole(id, role);
         return ResponseEntity.ok(responseMessage);
     }
 }

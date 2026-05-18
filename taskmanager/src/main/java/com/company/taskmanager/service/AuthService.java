@@ -6,6 +6,7 @@ import com.company.taskmanager.dto.LoginRequest;
 import com.company.taskmanager.dto.RegisterRequest;
 import com.company.taskmanager.entity.Role;
 import com.company.taskmanager.entity.User;
+import com.company.taskmanager.repository.RoleRepository;
 import com.company.taskmanager.repository.UserRepository;
 import com.company.taskmanager.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,7 @@ import java.util.Collections;
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
@@ -36,6 +38,9 @@ public class AuthService {
             throw new RuntimeException("Eroare: Email-ul este deja folosit!");
         }
 
+        Role userRole = roleRepository.findByName("ROLE_USER")
+                .orElseThrow(() -> new RuntimeException("Eroare: Rolul USER nu a fost gasit in DB!"));
+
         // cream un obiect nou de tip User folosind pattern-ul Builder
         User user = User.builder()
                 .username(request.getUsername())
@@ -44,6 +49,7 @@ public class AuthService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 // contul este activ implicit
                 .enabled(true)
+                .roles(Collections.singleton(userRole))
                 .build();
 
         // salvam user in PostgreSQL

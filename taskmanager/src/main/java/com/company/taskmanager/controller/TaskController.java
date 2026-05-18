@@ -69,7 +69,7 @@ public class TaskController {
 
     // Asignare task catre un membru al echipei
     // URL complet: POST http://localhost:8080/api/tasks/1/assign?username=nume_utilizator
-    @PostMapping("/{taskId}/assign")
+    @PatchMapping("/{taskId}/assign")
     @PreAuthorize("hasRole('ADMIN') or " +
             "@taskService.isUserAuthorizedForTask(#taskId, authentication.name)")
     public ResponseEntity<Task> assignTask(

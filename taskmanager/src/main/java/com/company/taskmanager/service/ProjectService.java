@@ -21,6 +21,7 @@ public class ProjectService {
     private final UserRepository userRepository;
 
     // verifica daca user-ul curent e owner al proiectului
+    @Transactional(readOnly = true)
     public boolean isProjectOwner(Long projectId, String username) {
         return projectRepository.findById(projectId)
                 .map(project -> project.getOwner().getUsername().equals(username))
@@ -51,6 +52,10 @@ public class ProjectService {
         // salvam in PostgreSQL, logam actiunea si returnam proiectul salvat
         Project savedProject = projectRepository.save(project);
 
+        // Prevenim LazyInitializationException forțând citirea relațiilor înainte de return
+        savedProject.getOwner().getRoles().size();
+        savedProject.getMembers().forEach(m -> m.getRoles().size());
+
         log.info("PROIECT CREAT: Userul '{}' a creat proiectul '{}' (ID: {})",
                 ownerUsername, savedProject.getName(), savedProject.getId());
 
@@ -58,15 +63,30 @@ public class ProjectService {
     }
 
     // Listare toate proiectele active (pt Admin)
+    @Transactional(readOnly = true)
     public List<Project> getAllActiveProjects() {
-        return projectRepository.findByDeletedFalse();
+        List<Project> projects = projectRepository.findByDeletedFalse();
+        // Prevenim LazyInitializationException pe toata lista
+        projects.forEach(p -> {
+            p.getOwner().getRoles().size();
+            p.getMembers().forEach(m -> m.getRoles().size());
+        });
+        return projects;
     }
 
     // Listare proiecte in care userul curent este membru
+    @Transactional(readOnly = true)
     public List<Project> getProjectsForMember(String username) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Eroare: Utilizatorul nu a fost gasit!"));
-        return projectRepository.findByMembersContainingAndDeletedFalse(user);
+
+        List<Project> projects = projectRepository.findByMembersContainingAndDeletedFalse(user);
+        // Prevenim LazyInitializationException
+        projects.forEach(p -> {
+            p.getOwner().getRoles().size();
+            p.getMembers().forEach(m -> m.getRoles().size());
+        });
+        return projects;
     }
 
     // Adaugare membru intr-un proiect existent
@@ -89,6 +109,10 @@ public class ProjectService {
         // adaugam membrul in colectia Set a proiectului
         project.getMembers().add(member);
 
+        // Prevenim LazyInitializationException înainte de a trimite JSON-ul
+        project.getOwner().getRoles().size();
+        project.getMembers().forEach(m -> m.getRoles().size());
+
         log.info("MEMBRU ADAUGAT: Userul '{}' a fost adaugat in proiectul cu ID-ul {}",
                 memberUsername, projectId);
 
@@ -98,6 +122,7 @@ public class ProjectService {
     }
 
     // Modificare informatii proiect
+    @Transactional
     public Project updateProject(Long projectId, ProjectRequest request) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Eroare: Proiectul nu a fost gasit!"));
@@ -112,12 +137,17 @@ public class ProjectService {
 
         Project updatedProject = projectRepository.save(project);
 
+        // Prevenim LazyInitializationException
+        updatedProject.getOwner().getRoles().size();
+        updatedProject.getMembers().forEach(m -> m.getRoles().size());
+
         log.info("PROIECT MODIFICAT: Detaliile proiectului cu ID-ul {} au fost actualizate", projectId);
 
         return updatedProject;
     }
 
     // Stergere proiect, SOFT DELETE
+    @Transactional
     public void softDeleteProject(Long projectId) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Eroare: Proiectul nu a fost gasit!"));

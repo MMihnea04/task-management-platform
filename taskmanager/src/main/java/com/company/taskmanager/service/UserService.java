@@ -1,7 +1,9 @@
 package com.company.taskmanager.service;
 
+import com.company.taskmanager.entity.Project;
 import com.company.taskmanager.entity.Role;
 import com.company.taskmanager.entity.User;
+import com.company.taskmanager.repository.ProjectRepository;
 import com.company.taskmanager.repository.RoleRepository;
 import com.company.taskmanager.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -17,64 +19,82 @@ import java.util.List;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final RoleRepository roleRepository; // Avem nevoie de acest repository acum
+    private final RoleRepository roleRepository;
+    private final ProjectRepository projectRepository; // Injectam repository-ul de proiecte
 
     @Transactional
-    public String promoteUserToAdmin(String username) {
-        User user = userRepository.findByUsername(username)
+    public String modifyUserRole(Long userId, String roleName) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Eroare: Utilizatorul nu a fost gasit!"));
 
-        // Cautam rolul de admin in baza de date
-        Role adminRole = roleRepository.findByName("ROLE_ADMIN")
-                .orElseThrow(() -> new RuntimeException("Eroare: Rolul de ADMIN nu exista in sistem!"));
+        // Formatam automat rolul adaugand "ROLE_" in caz ca vine doar ca "ADMIN" din Postman
+        String fullRoleName = roleName.startsWith("ROLE_") ? roleName : "ROLE_" + roleName;
 
-        // Verificam daca userul are deja acest rol in Set-ul lui
-        boolean isAlreadyAdmin = user.getRoles().stream()
-                .anyMatch(role -> role.getName().equals(adminRole.getName()));
+        Role newRole = roleRepository.findByName(fullRoleName)
+                .orElseThrow(() -> new RuntimeException("Eroare: Rolul " + fullRoleName + " nu exista in sistem!"));
 
-        if (isAlreadyAdmin) {
-            throw new RuntimeException("Eroare: Utilizatorul este deja ADMIN!");
-        }
-
-        // Adaugam rolul si salvam
-        user.getRoles().add(adminRole);
+        user.getRoles().clear();
+        user.getRoles().add(newRole);
         userRepository.save(user);
 
-        log.warn("PROMOVARE ADMIN: Utilizatorul '{}' a fost promovat la gradul de ADMIN!", username);
+        log.warn("MODIFICARE ROL: Utilizatorului '{}' i s-a setat rolul {}!", user.getUsername(), fullRoleName);
 
-        return "Succes: Utilizatorul " + username + " a fost promovat la gradul de ADMIN!";
+        return "Succes: Rolul a fost modificat!";
     }
 
-    // Vizualizare profil propriu
+    @Transactional(readOnly = true)
     public User getMyProfile(String username) {
-        return userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Eroare: Utilizatorul nu a fost gasit!"));
-    }
-
-    // Actualizare informatii personale
-    @Transactional
-    public User updateMyProfile(String username, String firstName, String lastName) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Eroare: Utilizatorul nu a fost gasit!"));
 
-        user.setFirstName(firstName);
-        user.setLastName(lastName);
+        // Fortam initializarea lazy pentru roluri ca sa nu primim 500 LazyInitializationException in JSON
+        user.getRoles().size();
+        return user;
+    }
 
+    @Transactional
+    public User updateMyProfile(String username, String firstName, String lastName, String email) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Eroare: Utilizatorul nu a fost gasit!"));
+
+        if (firstName != null) user.setFirstName(firstName);
+        if (lastName != null) user.setLastName(lastName);
+        if (email != null) user.setEmail(email);
+
+        user.getRoles().size();
         return userRepository.save(user);
     }
 
-    // Listare toti utilizatorii (doar Admin)
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
+    @Transactional(readOnly = true)
+    public Object getMyProjects(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Eroare: Utilizatorul nu a fost gasit!"));
+
+        // Interogam direct repository-ul de proiecte, eliminand complet eroarea de getProjects() din User
+        List<Project> activeProjects = projectRepository.findByMembersContainingAndDeletedFalse(user);
+
+        activeProjects.forEach(p -> {
+            p.getOwner().getRoles().size();
+            p.getMembers().forEach(m -> m.getRoles().size());
+        });
+
+        return activeProjects;
     }
 
-    // Soft Delete cont user (doar Admin)
+    @Transactional(readOnly = true)
+    public List<User> getAllUsers() {
+        List<User> users = userRepository.findAll();
+        // Evitam lazy load exception pentru toti userii din lista
+        users.forEach(u -> u.getRoles().size());
+        return users;
+    }
+
     @Transactional
     public void deactivateUser(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Eroare: Utilizatorul nu a fost gasit!"));
 
-        user.setEnabled(false); // Spring Security va bloca automat accesul cand e false
+        user.setEnabled(false);
         userRepository.save(user);
         log.warn("USER DEZACTIVAT: Administratorul a dezactivat contul cu ID-ul {}", userId);
     }
